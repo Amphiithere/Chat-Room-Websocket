@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head></head>
+<body>
+  <!-- Blocks for the username and message prompts-->
+  <div id="username-prompt">
+    <input type="text" id="username-input" placeholder="Enter your username" autocomplete="off">
+    <button id="set-username">Set Username</button>
+  </div>
+
+  <form id="message-form" style="display: none;">
+    <input type="text" id="message-input" placeholder="Enter message" autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+
+  <!-- chat feed is organized as unordered list -->
+  <ul id="messages"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+      const socket = io();
+      let username = '';
+
+      //handle username
+      document.getElementById('set-username').addEventListener('click', () => {
+        username = document.getElementById('username-input').value.trim(); //trim pre and post word whitespaces
+        if (username) {
+          //hide username prompt then show message prompt
+          document.getElementById('username-prompt').style.display = 'none';
+          document.getElementById('message-form').style.display = 'block';
+        } else {
+          alert('Please enter a valid username');
+        }
+      });
+
+      //inform all users of a new user connection
+      socket.on('connect', () => {
+        console.log('Connected to server');
+      });
+
+      //inform server of posted message content and the user who sent it
+      socket.on('newMessage', (message) => {
+        const li = document.createElement('li');
+        li.textContent = `${message.from}: ${message.text}`;
+        document.getElementById('messages').appendChild(li);
+      });
+
+      //add user's message to bottom of chat list
+      document.getElementById('message-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const message = document.getElementById('message-input').value;
+        socket.emit('createMessage', {
+          from: username,
+          text: message,
+          createdAt: Date.now()
+        });
+
+        //clean variable
+        document.getElementById('message-input').value = '';
+      });
+
+      //inform all users of a user disconnection
+      socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+      });
+  </script>
+
+</body>
+
+</html>
